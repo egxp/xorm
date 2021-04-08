@@ -10,10 +10,10 @@ import (
 	"reflect"
 
 	"xorm.io/builder"
-	"xorm.io/xorm/caches"
-	"xorm.io/xorm/internal/statements"
-	"xorm.io/xorm/internal/utils"
-	"xorm.io/xorm/schemas"
+	"github.com/egxp/xorm/caches"
+	"github.com/egxp/xorm/internal/statements"
+	"github.com/egxp/xorm/internal/utils"
+	"github.com/egxp/xorm/schemas"
 )
 
 const (

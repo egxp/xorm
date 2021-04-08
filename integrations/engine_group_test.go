@@ -7,9 +7,9 @@ package integrations
 import (
 	"testing"
 
-	"xorm.io/xorm"
-	"xorm.io/xorm/log"
-	"xorm.io/xorm/schemas"
+	"github.com/egxp/xorm"
+	"github.com/egxp/xorm/log"
+	"github.com/egxp/xorm/schemas"
 
 	"github.com/stretchr/testify/assert"
 )

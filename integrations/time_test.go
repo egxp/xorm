@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"xorm.io/xorm/internal/utils"
+	"github.com/egxp/xorm/internal/utils"
 )
 
 func formatTime(t time.Time) string {
