@@ -1,0 +1,27 @@
+version: '3.7'
+
+services:
+  mysql5:
+    image: mysql:5.7
+    networks:
+      - test
+    environment:
+      - "TZ=${TZ:-Asia/Tokyo}"
+      - "MYSQL_ALLOW_EMPTY_PASSWORD=yes"
+      - "MYSQL_DATABASE=xorm_test"
+  test-mysql:
+    image: golang:1.16
+    networks:
+      - test
+    volumes:
+      - $PWD:/go/xorm
+    working_dir: /go/xorm
+    environment:
+      - "TZ=${TZ:-Asia/Tokyo}"
+    entrypoint: make test-mysql
+    depends_on:
+      - mysql5
+
+networks:
+  test:
+    name: test

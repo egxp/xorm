@@ -1,0 +1,24 @@
+name: CI
+on:
+  push:
+  pull_request:
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('./go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - uses: satackey/action-docker-layer-caching@v0.0.11
+        continue-on-error: true
+      - run: |-
+          make vet
+          make test # unit test
+          docker-compose up -d mysql5
+          docker run --rm --net=test jwilder/dockerize -timeout 60s -wait tcp://mysql5:3306
+          docker-compose up test-mysql
