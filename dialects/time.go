@@ -34,7 +34,7 @@ func FormatTime(dialect Dialect, sqlTypeName string, t time.Time) (v interface{}
 			v = t.Format(time.RFC3339Nano)
 		}
 	case schemas.BigInt, schemas.Int:
-		v = t.Unix()
+		v = int64(t.Nanosecond()) / int64(time.Millisecond)
 	default:
 		v = t
 	}
