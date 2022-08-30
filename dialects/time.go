@@ -52,6 +52,8 @@ func FormatColumnTime(dialect Dialect, dbLocation *time.Location, col *schemas.C
 	case schemas.TimeStampz:
 		if dialect.URI().DBType == schemas.MSSQL {
 			return t.Format("2006-01-02T15:04:05.9999999Z07:00"), nil
+		} else if dialect.URI().DBType == schemas.POSTGRES {
+			return t.Format("2006-01-02T15:04:05.999999Z07:00"), nil
 		} else {
 			return t.Format(time.RFC3339Nano), nil
 		}

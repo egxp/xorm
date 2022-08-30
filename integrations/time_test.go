@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"xorm.io/xorm/internal/utils"
+	"xorm.io/xorm/schemas"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -21,6 +22,16 @@ func formatTime(t time.Time, scales ...int) string {
 		layout += "." + strings.Repeat("0", scales[0])
 	}
 	return t.Format(layout)
+}
+
+func formatTimeStampz(t time.Time, dbType schemas.DBType) string {
+	if dbType == schemas.MSSQL {
+		return t.Format("2006-01-02T15:04:05.9999999Z07:00")
+	} else if dbType == schemas.POSTGRES {
+		return t.Format("2006-01-02T15:04:05.999999Z07:00")
+	} else {
+		return t.Format(time.RFC3339Nano)
+	}
 }
 
 func TestTimeUserTime(t *testing.T) {
@@ -570,52 +581,138 @@ func TestDeletedInt64(t *testing.T) {
 	assert.EqualValues(t, d1, d4)
 }
 
-func TestTimestamp(t *testing.T) {
+func TestDateTime(t *testing.T) {
 	{
 		assert.NoError(t, PrepareEngine())
 
-		type TimestampStruct struct {
+		type DateTimeStruct3 struct {
 			Id         int64
-			InsertTime time.Time `xorm:"DATETIME(6)"`
+			InsertTime time.Time `xorm:"datetime(3)"`
 		}
 
-		assertSync(t, new(TimestampStruct))
+		assertSync(t, new(DateTimeStruct3))
 
-		var d1 = TimestampStruct{
+		var d1 = DateTimeStruct3{
 			InsertTime: time.Now(),
 		}
 		cnt, err := testEngine.Insert(&d1)
 		assert.NoError(t, err)
 		assert.EqualValues(t, 1, cnt)
 
-		var d2 TimestampStruct
+		var d2 DateTimeStruct3
+		has, err := testEngine.ID(d1.Id).Get(&d2)
+		assert.NoError(t, err)
+		assert.True(t, has)
+		assert.EqualValues(t, formatTime(d1.InsertTime, 3), formatTime(d2.InsertTime, 3))
+	}
+
+	{
+		assert.NoError(t, PrepareEngine())
+
+		type DateTimeStruct6 struct {
+			Id         int64
+			InsertTime time.Time `xorm:"datetime(6)"`
+		}
+
+		assertSync(t, new(DateTimeStruct6))
+
+		var d1 = DateTimeStruct6{
+			InsertTime: time.Now(),
+		}
+		cnt, err := testEngine.Insert(&d1)
+		assert.NoError(t, err)
+		assert.EqualValues(t, 1, cnt)
+
+		var d2 DateTimeStruct6
 		has, err := testEngine.ID(d1.Id).Get(&d2)
 		assert.NoError(t, err)
 		assert.True(t, has)
 		assert.EqualValues(t, formatTime(d1.InsertTime, 6), formatTime(d2.InsertTime, 6))
 	}
+}
 
-	/*{
+func TestTimeStamp(t *testing.T) {
+	{
 		assert.NoError(t, PrepareEngine())
 
-		type TimestampzStruct struct {
+		type TimeStampStruct3 struct {
 			Id         int64
-			InsertTime time.Time `xorm:"TIMESTAMPZ"`
+			InsertTime time.Time `xorm:"timestamp(3)"`
 		}
 
-		assertSync(t, new(TimestampzStruct))
+		assertSync(t, new(TimeStampStruct3))
 
-		var d3 = TimestampzStruct{
+		var d1 = TimeStampStruct3{
 			InsertTime: time.Now(),
 		}
-		cnt, err := testEngine.Insert(&d3)
+		cnt, err := testEngine.Insert(&d1)
 		assert.NoError(t, err)
 		assert.EqualValues(t, 1, cnt)
 
-		var d4 TimestampzStruct
-		has, err := testEngine.ID(d3.Id).Get(&d4)
+		var d2 TimeStampStruct3
+		has, err := testEngine.ID(d1.Id).Get(&d2)
 		assert.NoError(t, err)
 		assert.True(t, has)
-		assert.EqualValues(t, formatTime(d3.InsertTime, 6), formatTime(d4.InsertTime, 6))
-	}*/
+		assert.EqualValues(t, formatTime(d1.InsertTime, 3), formatTime(d2.InsertTime, 3))
+	}
+
+	{
+		assert.NoError(t, PrepareEngine())
+
+		type TimeStampStruct6 struct {
+			Id         int64
+			InsertTime time.Time `xorm:"timestamp(6)"`
+		}
+
+		assertSync(t, new(TimeStampStruct6))
+
+		var d1 = TimeStampStruct6{
+			InsertTime: time.Now(),
+		}
+		cnt, err := testEngine.Insert(&d1)
+		assert.NoError(t, err)
+		assert.EqualValues(t, 1, cnt)
+
+		var d2 TimeStampStruct6
+		has, err := testEngine.ID(d1.Id).Get(&d2)
+		assert.NoError(t, err)
+		assert.True(t, has)
+		assert.EqualValues(t, formatTime(d1.InsertTime, 6), formatTime(d2.InsertTime, 6))
+	}
+}
+
+func TestTimeStampz(t *testing.T) {
+	switch schemas.DBType(dbType) {
+	case schemas.MSSQL, schemas.POSTGRES:
+	default:
+		t.Skip("unsupported timestampz")
+	}
+
+	{
+		assert.NoError(t, PrepareEngine())
+
+		type TimeStampzStruct struct {
+			Id         int64
+			InsertTime time.Time `xorm:"timestampz"`
+		}
+
+		assertSync(t, new(TimeStampzStruct))
+
+		var d1 = TimeStampzStruct{
+			InsertTime: time.Now(),
+		}
+		cnt, err := testEngine.Insert(&d1)
+		assert.NoError(t, err)
+		assert.EqualValues(t, 1, cnt)
+
+		var d2 TimeStampzStruct
+		has, err := testEngine.ID(d1.Id).Get(&d2)
+		assert.NoError(t, err)
+		assert.True(t, has)
+		assert.EqualValues(
+			t,
+			formatTimeStampz(d1.InsertTime, schemas.DBType(dbType)),
+			formatTimeStampz(d2.InsertTime, schemas.DBType(dbType)),
+		)
+	}
 }
