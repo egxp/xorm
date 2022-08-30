@@ -1,0 +1,119 @@
+name: CI
+on:
+  push:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    strategy:
+      matrix:
+        go-version: ['1.15', '1.16', '1.17', '1.18', '1.19']
+    name: Test (Go ${{ matrix.go-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Setup Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: ${{ matrix.go-version }}
+        cache: true
+    - run: make vet
+    - run: make test
+  test-sqlite:
+    strategy:
+      matrix:
+        go-version: ['1.15', '1.16', '1.17', '1.18', '1.19']
+    name: Test (Go ${{ matrix.go-version }} / SQLite)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Setup Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: ${{ matrix.go-version }}
+        cache: true
+    - run: make test-sqlite
+    - run: TEST_CACHE_ENABLE=true make test-sqlite
+    - run: TEST_QUOTE_POLICY=reserved make test-sqlite
+  test-mysql:
+    strategy:
+      matrix:
+        go-version: ['1.15', '1.16', '1.17', '1.18', '1.19']
+        db-version: ['5.7', '8.0']
+        db-charset: ['utf8', 'utf8mb4']
+    name: Test (Go ${{ matrix.go-version }} / MySQL ${{ matrix.db-version }} / ${{ matrix.db-charset }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      mysql:
+        image: mysql:${{ matrix.db-version }}
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: xorm_test
+        ports:
+        - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      TEST_MYSQL_HOST: localhost:3306
+      TEST_MYSQL_CHARSET: ${{ matrix.db-charset }}
+      TEST_MYSQL_DBNAME: xorm_test
+      TEST_MYSQL_USERNAME: root
+      TEST_MYSQL_PASSWORD: root
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Setup Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: ${{ matrix.go-version }}
+        cache: true
+    - run: make test-mysql
+    - run: TEST_CACHE_ENABLE=true make test-mysql
+    - run: TEST_QUOTE_POLICY=reserved make test-mysql
+  test-postgres:
+    strategy:
+      matrix:
+        go-version: ['1.15', '1.16', '1.17', '1.18', '1.19']
+        db-version: ['10', '11', '12', '13', '14']
+    name: Test (Go ${{ matrix.go-version }} / PostgreSQL ${{ matrix.db-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      mysql:
+        image: postgres:${{ matrix.db-version }}
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: xorm_test
+        ports:
+        - 5432:5432
+        options: >-
+          --health-cmd "pg_isready"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      TEST_PGSQL_HOST: localhost:5432
+      TEST_PGSQL_DBNAME: xorm_test
+      TEST_PGSQL_USERNAME: postgres
+      TEST_PGSQL_PASSWORD: postgres
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Setup Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: ${{ matrix.go-version }}
+        cache: true
+    - run: make test-postgres
+    - run: TEST_CACHE_ENABLE=true make test-postgres
+    - run: TEST_QUOTE_POLICY=reserved make test-postgres
